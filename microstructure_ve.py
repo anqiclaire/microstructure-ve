@@ -64,7 +64,7 @@ class GridNodes:
 
 
 @dataclass
-class CPE4RElements:
+class CPS4RElements:
     nodes: GridNodes
 
     def __post_init__(self):
@@ -81,7 +81,7 @@ class CPE4RElements:
         key_nodes = all_nodes[:-1, :-1].ravel()
         top_nodes = all_nodes[1:, :-1].ravel()
         topright_nodes = all_nodes[1:, 1:].ravel()
-        inp_file_obj.write("*Element, type=CPE4R\n")
+        inp_file_obj.write("*Element, type=CPS4R\n")
         for elem_num, tn, kn, rn, trn in zip(
                 self.element_nums, top_nodes, key_nodes, right_nodes, topright_nodes
         ):
@@ -412,7 +412,7 @@ ALLAE, ALLCD, ALLEE, ALLFD, ALLJD, ALLKE, ALLPD, ALLSD, ALLSE, ALLVD, ALLWK, ETO
 def write_abaqus_input(
         *,
         nodes: GridNodes,
-        elements: CPE4RElements,
+        elements: CPS4RElements,
         materials: Iterable[Material],
         bcs: PeriodicBoundaryConditions,
         step_parm: StepParameters,
