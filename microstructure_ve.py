@@ -305,7 +305,7 @@ class ViscoelasticMaterial(Material):
         # special normalized bulk modulus used by abaqus
         # constant K* means wkstar.real and wkstar.loss are 0
         wkstar = np.empty_like(shear_cplx)
-        
+        wkstar.real = wkstar.imag = 0
         return wgstar, wkstar
         
     def to_inp(self, inp_file_obj):
