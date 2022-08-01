@@ -225,7 +225,7 @@ class DisplacementBoundaryCondition:
 class Material:
     elset: ElementSet
     density: float  # kg/micron^3
-    poisson: float
+    poisson: float # instantaneous, will be updated to long term when written to .inp for polymer
     youngs: float  # MPa, long term, low freq modulus
 
     def to_inp(self, inp_file_obj):
@@ -286,19 +286,46 @@ class ViscoelasticMaterial(Material):
 
         return wgstar, wkstar
 
+    def normalize_modulus_constant_bulk(self):
+        # assume constant bulk modulus, K*.real = K0, K*.imag = 0
+        youngs_0, youngs_inf = self.youngs_cplx[-1].real, self.youngs_cplx[0].real
+        nu_0 = self.poisson # save instantaneous poisson
+        bulk_0 = youngs_0/(3*(1-2*nu_0))
+        # calculate long-term poisson, cap with 0.49 to avoid Abaqus error
+        nu_inf = min(0.49,(3*bulk_0-youngs_inf)/(6*bulk_0))
+        self.poisson = nu_inf # update self.poisson to be long-term poisson
+        shear_cplx = (3*bulk_0*youngs_cplx)/(9*bulk_0-youngs_cplx)
+        
+        # special normalized shear modulus used by abaqus
+        wgstar = np.empty_like(shear_cplx)
+        shear_inf = shear_cplx[0].real
+        wgstar.real = shear_cplx.imag / shear_inf
+        wgstar.imag = 1 - shear_cplx.real / shear_inf
+        
+        # special normalized bulk modulus used by abaqus
+        # constant K* means wkstar.real and wkstar.loss are 0
+        wkstar = np.empty_like(shear_cplx)
+        
+        return wgstar, wkstar
+        
     def to_inp(self, inp_file_obj):
+        wgstar, wkstar = self.normalize_modulus_constant_bulk()
         super().to_inp(inp_file_obj)
         inp_file_obj.write("*Viscoelastic, frequency=TABULAR\n")
 
-        # special normalized bulk modulus used by abaqus
-        # if poisson's ratio is frequency-independent, it drops out
-        # and youngs=shear=bulk when normalized
-        youngs_inf = self.youngs_cplx[0].real
-        real = (self.youngs_cplx.imag / youngs_inf).tolist()
-        imag = (1 - self.youngs_cplx.real / youngs_inf).tolist()
+#         # special normalized bulk modulus used by abaqus
+#         # if poisson's ratio is frequency-independent, it drops out
+#         # and youngs=shear=bulk when normalized
+#         youngs_inf = self.youngs_cplx[0].real
+#         real = (self.youngs_cplx.imag / youngs_inf).tolist()
+#         imag = (1 - self.youngs_cplx.real / youngs_inf).tolist()
+#         freq = self.apply_shift().tolist()
+
         freq = self.apply_shift().tolist()
 
-        for wgr, wgi, wkr, wki, f in zip(real, imag, real, imag, freq):
+        for wgr, wgi, wkr, wki, f in zip(
+            wgstar.real, wgstar.imag, wkstar.real, wkstar.imag, freq
+        ):
             inp_file_obj.write(f"{wgr:.6e}, {wgi:.6e}, {wkr:.6e}, {wki:.6e}, {f:.6e}\n")
 
 
