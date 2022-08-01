@@ -294,7 +294,7 @@ class ViscoelasticMaterial(Material):
         # calculate long-term poisson, cap with 0.49 to avoid Abaqus error
         nu_inf = min(0.49,(3*bulk_0-youngs_inf)/(6*bulk_0))
         self.poisson = nu_inf # update self.poisson to be long-term poisson
-        shear_cplx = (3*bulk_0*youngs_cplx)/(9*bulk_0-youngs_cplx)
+        shear_cplx = (3*bulk_0*self.youngs_cplx)/(9*bulk_0-self.youngs_cplx)
         
         # special normalized shear modulus used by abaqus
         wgstar = np.empty_like(shear_cplx)
