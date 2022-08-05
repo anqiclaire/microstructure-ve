@@ -195,7 +195,7 @@ class msve_wrapper(object):
         if 'force_layer_assign' not in kwargs:
             self.force_layer_assign = True # default to be True
         else:
-            self.force_layer_assign = force_layer_assign
+            self.force_layer_assign = kwargs['force_layer_assign']
 
     def load_microstructure(self, ms_filename, ms_varname = ''):
         # check extension
