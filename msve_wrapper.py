@@ -114,6 +114,11 @@ class msve_wrapper(object):
 
         :param reverse: set to True if matrix is 0, filler is 1 in the microstructure
         :type reverse: bool
+        
+        :param force_layer_assign: a flag for whether forcing interphase layer assignment, 
+            True means the final microstructure after applying interphase must have its
+            matrix or interphase layer with at least 1 pixel assigned. Default to True.
+        :type force_layer_assign: bool
         '''
         self.params = kwargs
         ## matrix properties
@@ -186,6 +191,11 @@ class msve_wrapper(object):
                 ) if periodic_intph else assign_intph(self.ms_img, self.layers)
         else:
             self.intph_img = self.ms_img
+        # flag for force interphase layer assignment
+        if 'force_layer_assign' not in kwargs:
+            self.force_layer_assign = True # default to be True
+        else:
+            self.force_layer_assign = force_layer_assign
 
     def load_microstructure(self, ms_filename, ms_varname = ''):
         # check extension
@@ -214,6 +224,9 @@ class msve_wrapper(object):
             #     case 1: 1 filler set, multiple interphase set, 1 matrix set
             if len(elsets) <= 1 + len(self.layers):
                 has_matrix = False
+                # exit if force_layer_assign is True and has_matrix is False
+                if self.force_layer_assign:
+                    return False
             # filler
             filler_material = Material(
                 elsets[0],
@@ -292,3 +305,4 @@ class msve_wrapper(object):
         # write to inp file
         write_abaqus_input(heading=heading, nodes=nodes, elements=elements,
             materials=materials, bcs=pbcs, step_parm=step_parm, path=inp_filename)
+        return True
