@@ -306,3 +306,8 @@ class msve_wrapper(object):
         write_abaqus_input(heading=heading, nodes=nodes, elements=elements,
             materials=materials, bcs=pbcs, step_parm=step_parm, path=inp_filename)
         return True
+    
+    def export_interphase_microstructure(self, path):
+        with open(path, 'wb') as f:
+            np.save(f, self.intph_img)
+        return
